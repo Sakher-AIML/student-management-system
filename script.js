@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // If this script is loaded on non-demo pages, exit safely.
     var demoRoot = document.getElementById('ssms-demo-root');
     if (!demoRoot) {
         runPhpPageHelpers();
@@ -46,6 +45,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var navLinks = document.querySelectorAll('.demo-nav-link');
     var pagePanels = document.querySelectorAll('[data-page-content]');
 
+    var studentForm = document.getElementById('studentForm');
+    var studentEditId = document.getElementById('studentEditId');
+    var studentRollNo = document.getElementById('studentRollNo');
+    var studentName = document.getElementById('studentName');
+    var studentCourse = document.getElementById('studentCourse');
+    var studentSemester = document.getElementById('studentSemester');
+    var saveStudentBtn = document.getElementById('saveStudentBtn');
+    var cancelEditStudentBtn = document.getElementById('cancelEditStudentBtn');
+
     var studentsTableBody = document.getElementById('studentsTableBody');
     var attendanceTableBody = document.getElementById('attendanceTableBody');
     var marksTableBody = document.getElementById('marksTableBody');
@@ -75,15 +83,15 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeUI();
 
     function initializeUI() {
-        populateStudentsSelects();
         populateSubjectSelect();
         renderAll();
 
-        attendanceDate.value = getTodayDate();
+        if (!attendanceDate.value) {
+            attendanceDate.value = getTodayDate();
+        }
 
         var isLoggedIn = localStorage.getItem(AUTH_KEY) === 'true';
         toggleAppView(isLoggedIn);
-
         if (isLoggedIn) {
             showPage('dashboard');
         }
@@ -117,6 +125,111 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    studentForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        var editId = Number(studentEditId.value || 0);
+        var rollNo = studentRollNo.value.trim();
+        var name = studentName.value.trim();
+        var course = studentCourse.value.trim();
+        var semester = studentSemester.value.trim();
+
+        if (!rollNo || !name || !course || !semester) {
+            alert('Please fill all student fields.');
+            return;
+        }
+
+        var duplicateRoll = state.students.some(function (student) {
+            return student.rollNo.toLowerCase() === rollNo.toLowerCase() && student.id !== editId;
+        });
+        if (duplicateRoll) {
+            alert('Roll number already exists. Please use a unique roll number.');
+            return;
+        }
+
+        if (editId > 0) {
+            var index = state.students.findIndex(function (student) {
+                return student.id === editId;
+            });
+            if (index !== -1) {
+                state.students[index].rollNo = rollNo;
+                state.students[index].name = name;
+                state.students[index].course = course;
+                state.students[index].semester = semester;
+            }
+            alert('Student updated successfully.');
+        } else {
+            state.students.push({
+                id: nextId(state.students),
+                rollNo: rollNo,
+                name: name,
+                course: course,
+                semester: semester
+            });
+            alert('Student added successfully.');
+        }
+
+        resetStudentForm();
+        saveState();
+        renderAll();
+    });
+
+    cancelEditStudentBtn.addEventListener('click', function () {
+        resetStudentForm();
+    });
+
+    studentsTableBody.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        var action = target.getAttribute('data-action');
+        var id = Number(target.getAttribute('data-id'));
+        if (!action || !id) {
+            return;
+        }
+
+        if (action === 'edit-student') {
+            var student = getStudentById(id);
+            if (!student) {
+                return;
+            }
+
+            studentEditId.value = String(student.id);
+            studentRollNo.value = student.rollNo;
+            studentName.value = student.name;
+            studentCourse.value = student.course;
+            studentSemester.value = student.semester;
+
+            saveStudentBtn.textContent = 'Update Student';
+            cancelEditStudentBtn.classList.remove('demo-hidden');
+            showPage('students');
+            return;
+        }
+
+        if (action === 'delete-student') {
+            var shouldDelete = confirm('Delete this student and all related attendance and marks records?');
+            if (!shouldDelete) {
+                return;
+            }
+
+            state.students = state.students.filter(function (studentRow) {
+                return studentRow.id !== id;
+            });
+            state.attendance = state.attendance.filter(function (row) {
+                return row.studentId !== id;
+            });
+            state.marks = state.marks.filter(function (row) {
+                return row.studentId !== id;
+            });
+
+            saveState();
+            renderAll();
+            reportOutput.innerHTML = '<p>Select a student and click Generate Report.</p>';
+        }
+    });
+
     attendanceForm.addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -129,12 +242,22 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        state.attendance.push({
-            id: Date.now(),
-            studentId: studentId,
-            date: date,
-            status: status
+        var existing = state.attendance.find(function (entry) {
+            return entry.studentId === studentId && entry.date === date;
         });
+
+        if (existing) {
+            existing.status = status;
+            alert('Attendance updated for selected date.');
+        } else {
+            state.attendance.push({
+                id: nextId(state.attendance),
+                studentId: studentId,
+                date: date,
+                status: status
+            });
+            alert('Attendance saved successfully.');
+        }
 
         saveState();
         renderDashboard();
@@ -142,6 +265,35 @@ document.addEventListener('DOMContentLoaded', function () {
         attendanceForm.reset();
         attendanceDate.value = getTodayDate();
         attendanceStatus.value = 'Present';
+    });
+
+    attendanceTableBody.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        if (target.getAttribute('data-action') !== 'delete-attendance') {
+            return;
+        }
+
+        var id = Number(target.getAttribute('data-id'));
+        if (!id) {
+            return;
+        }
+
+        var shouldDelete = confirm('Delete this attendance entry?');
+        if (!shouldDelete) {
+            return;
+        }
+
+        state.attendance = state.attendance.filter(function (entry) {
+            return entry.id !== id;
+        });
+
+        saveState();
+        renderDashboard();
+        renderAttendanceTable();
     });
 
     marksForm.addEventListener('submit', function (event) {
@@ -163,14 +315,25 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        state.marks.push({
-            id: Date.now(),
-            studentId: studentId,
-            subject: subject,
-            examType: exam,
-            marksObtained: obtained,
-            maxMarks: total
+        var existingMark = state.marks.find(function (entry) {
+            return entry.studentId === studentId && entry.subject === subject && entry.examType.toLowerCase() === exam.toLowerCase();
         });
+
+        if (existingMark) {
+            existingMark.marksObtained = obtained;
+            existingMark.maxMarks = total;
+            alert('Marks updated for this exam.');
+        } else {
+            state.marks.push({
+                id: nextId(state.marks),
+                studentId: studentId,
+                subject: subject,
+                examType: exam,
+                marksObtained: obtained,
+                maxMarks: total
+            });
+            alert('Marks saved successfully.');
+        }
 
         saveState();
         renderDashboard();
@@ -178,6 +341,35 @@ document.addEventListener('DOMContentLoaded', function () {
         marksForm.reset();
         examType.value = 'Internal-1';
         maxMarks.value = '100';
+    });
+
+    marksTableBody.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        if (target.getAttribute('data-action') !== 'delete-marks') {
+            return;
+        }
+
+        var id = Number(target.getAttribute('data-id'));
+        if (!id) {
+            return;
+        }
+
+        var shouldDelete = confirm('Delete this marks entry?');
+        if (!shouldDelete) {
+            return;
+        }
+
+        state.marks = state.marks.filter(function (entry) {
+            return entry.id !== id;
+        });
+
+        saveState();
+        renderDashboard();
+        renderMarksTable();
     });
 
     generateReportBtn.addEventListener('click', function () {
@@ -198,6 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         state = clone(DEFAULT_DATA);
         saveState();
+        resetStudentForm();
         renderAll();
         reportOutput.innerHTML = '<p>Data reset complete. Select a student and click Generate Report.</p>';
         alert('Demo data has been reset.');
@@ -253,27 +446,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderStudentsTable() {
         if (state.students.length === 0) {
-            studentsTableBody.innerHTML = '<tr><td colspan="4">No students found.</td></tr>';
+            studentsTableBody.innerHTML = '<tr><td colspan="5">No students found.</td></tr>';
             return;
         }
 
-        studentsTableBody.innerHTML = state.students.map(function (student) {
-            return '<tr>' +
-                '<td>' + escapeHtml(student.rollNo) + '</td>' +
-                '<td>' + escapeHtml(student.name) + '</td>' +
-                '<td>' + escapeHtml(student.course) + '</td>' +
-                '<td>' + escapeHtml(student.semester) + '</td>' +
-            '</tr>';
-        }).join('');
+        studentsTableBody.innerHTML = state.students
+            .slice()
+            .sort(function (a, b) {
+                return a.rollNo.localeCompare(b.rollNo);
+            })
+            .map(function (student) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(student.rollNo) + '</td>' +
+                    '<td>' + escapeHtml(student.name) + '</td>' +
+                    '<td>' + escapeHtml(student.course) + '</td>' +
+                    '<td>' + escapeHtml(student.semester) + '</td>' +
+                    '<td class="demo-inline-actions">' +
+                        '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="edit-student" data-id="' + student.id + '">Edit</button>' +
+                        '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-student" data-id="' + student.id + '">Delete</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
     }
 
     function renderAttendanceTable() {
         if (state.attendance.length === 0) {
-            attendanceTableBody.innerHTML = '<tr><td colspan="4">No attendance records found.</td></tr>';
+            attendanceTableBody.innerHTML = '<tr><td colspan="5">No attendance records found.</td></tr>';
             return;
         }
 
-        var rows = state.attendance
+        attendanceTableBody.innerHTML = state.attendance
             .slice()
             .sort(function (a, b) {
                 return b.id - a.id;
@@ -287,25 +489,26 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<td>' + escapeHtml(student ? student.rollNo : '-') + '</td>' +
                     '<td>' + escapeHtml(student ? student.name : 'Unknown') + '</td>' +
                     '<td><span class="' + statusClass + '">' + escapeHtml(entry.status) + '</span></td>' +
+                    '<td><button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-attendance" data-id="' + entry.id + '">Delete</button></td>' +
                 '</tr>';
-            });
-
-        attendanceTableBody.innerHTML = rows.join('');
+            }).join('');
     }
 
     function renderMarksTable() {
         if (state.marks.length === 0) {
-            marksTableBody.innerHTML = '<tr><td colspan="5">No marks records found.</td></tr>';
+            marksTableBody.innerHTML = '<tr><td colspan="7">No marks records found.</td></tr>';
             return;
         }
 
-        var rows = state.marks
+        marksTableBody.innerHTML = state.marks
             .slice()
             .sort(function (a, b) {
                 return b.id - a.id;
             })
             .map(function (entry) {
                 var student = getStudentById(entry.studentId);
+                var percent = (entry.marksObtained / entry.maxMarks) * 100;
+                var grade = calculateGrade(percent);
 
                 return '<tr>' +
                     '<td>' + escapeHtml(student ? student.rollNo : '-') + '</td>' +
@@ -313,10 +516,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<td>' + escapeHtml(entry.subject) + '</td>' +
                     '<td>' + escapeHtml(entry.examType) + '</td>' +
                     '<td>' + escapeHtml(String(entry.marksObtained)) + ' / ' + escapeHtml(String(entry.maxMarks)) + '</td>' +
+                    '<td>' + grade + '</td>' +
+                    '<td><button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-marks" data-id="' + entry.id + '">Delete</button></td>' +
                 '</tr>';
-            });
-
-        marksTableBody.innerHTML = rows.join('');
+            }).join('');
     }
 
     function renderStudentReport(studentId) {
@@ -353,10 +556,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (marksRows.length === 0) {
             marksListHtml = '<p>No marks available.</p>';
         } else {
-            marksListHtml = '<div class="demo-table-wrap"><table><thead><tr><th>Subject</th><th>Exam</th><th>Score</th></tr></thead><tbody>' +
+            marksListHtml = '<div class="demo-table-wrap"><table><thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead><tbody>' +
                 marksRows.map(function (entry) {
+                    var percent = (entry.marksObtained / entry.maxMarks) * 100;
                     return '<tr><td>' + escapeHtml(entry.subject) + '</td><td>' + escapeHtml(entry.examType) + '</td><td>' +
-                        escapeHtml(String(entry.marksObtained)) + ' / ' + escapeHtml(String(entry.maxMarks)) + '</td></tr>';
+                        escapeHtml(String(entry.marksObtained)) + ' / ' + escapeHtml(String(entry.maxMarks)) + '</td><td>' + calculateGrade(percent) + '</td></tr>';
                 }).join('') +
                 '</tbody></table></div>';
         }
@@ -398,6 +602,46 @@ document.addEventListener('DOMContentLoaded', function () {
         return state.students.find(function (student) {
             return student.id === studentId;
         }) || null;
+    }
+
+    function resetStudentForm() {
+        studentEditId.value = '';
+        studentForm.reset();
+        saveStudentBtn.textContent = 'Add Student';
+        cancelEditStudentBtn.classList.add('demo-hidden');
+    }
+
+    function calculateGrade(percent) {
+        if (percent >= 90) {
+            return 'A+';
+        }
+        if (percent >= 80) {
+            return 'A';
+        }
+        if (percent >= 70) {
+            return 'B';
+        }
+        if (percent >= 60) {
+            return 'C';
+        }
+        if (percent >= 50) {
+            return 'D';
+        }
+        return 'F';
+    }
+
+    function nextId(list) {
+        if (!list || list.length === 0) {
+            return 1;
+        }
+
+        var max = 0;
+        list.forEach(function (item) {
+            if (Number(item.id) > max) {
+                max = Number(item.id);
+            }
+        });
+        return max + 1;
     }
 
     function loadState() {

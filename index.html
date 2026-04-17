@@ -76,7 +76,31 @@
                 </section>
 
                 <section class="demo-page demo-hidden" data-page-content="students">
-                    <h3>Student List</h3>
+                    <h3>Student Management</h3>
+                    <form id="studentForm" class="demo-card demo-form-grid">
+                        <input id="studentEditId" type="hidden">
+                        <div>
+                            <label for="studentRollNo">Roll No</label>
+                            <input id="studentRollNo" type="text" placeholder="e.g. CSE201" required>
+                        </div>
+                        <div>
+                            <label for="studentName">Student Name</label>
+                            <input id="studentName" type="text" placeholder="Enter full name" required>
+                        </div>
+                        <div>
+                            <label for="studentCourse">Course</label>
+                            <input id="studentCourse" type="text" placeholder="e.g. BSc Computer Science" required>
+                        </div>
+                        <div>
+                            <label for="studentSemester">Semester</label>
+                            <input id="studentSemester" type="text" placeholder="e.g. Semester 2" required>
+                        </div>
+                        <div class="demo-full-width demo-inline-actions">
+                            <button type="submit" id="saveStudentBtn" class="demo-btn demo-btn-primary">Add Student</button>
+                            <button type="button" id="cancelEditStudentBtn" class="demo-btn demo-btn-secondary demo-hidden">Cancel Edit</button>
+                        </div>
+                    </form>
+
                     <div class="demo-card demo-table-wrap">
                         <table>
                             <thead>
@@ -85,6 +109,7 @@
                                     <th>Name</th>
                                     <th>Course</th>
                                     <th>Semester</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTableBody"></tbody>
@@ -123,6 +148,7 @@
                                     <th>Roll No</th>
                                     <th>Student</th>
                                     <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="attendanceTableBody"></tbody>
@@ -167,6 +193,8 @@
                                     <th>Subject</th>
                                     <th>Exam</th>
                                     <th>Score</th>
+                                    <th>Grade</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="marksTableBody"></tbody>

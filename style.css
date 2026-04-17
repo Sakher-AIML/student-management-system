@@ -167,6 +167,18 @@ textarea:focus {
     cursor: pointer;
 }
 
+.demo-btn-mini {
+    padding: 6px 9px;
+    font-size: 12px;
+}
+
+.demo-inline-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .demo-btn-primary {
     background: var(--primary);
     color: #fff;
@@ -270,6 +282,10 @@ table th {
 
     .demo-btn {
         width: 100%;
+    }
+
+    .demo-btn-mini {
+        width: auto;
     }
 }
 
