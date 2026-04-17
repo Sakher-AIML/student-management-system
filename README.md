@@ -2,13 +2,34 @@
 
 A complete beginner-friendly college project built with HTML, CSS, JavaScript, PHP, and MySQL.
 
-This project helps manage student records in one place with modules for registration, attendance, marks, subjects, and report generation.
+This repository now contains both development phases:
+
+- Phase 1 (Frontend Demo): fully browser-based (no server required)
+- Phase 2 (Backend Upgrade): full PHP + MySQL implementation for XAMPP
+
+This structure lets you demonstrate the project even when PHP is not available, and later run the complete backend version for final submission.
+
+## Development Phases
+
+### Phase 1 - Frontend Demo (Completed)
+
+- File entry: index.html
+- Uses: HTML + CSS + JavaScript + localStorage
+- Modules: login, dashboard, students, attendance, marks, report
+- Demo login: admin / admin123
+
+### Phase 2 - PHP + MySQL Backend (Completed)
+
+- File entry: login.php (or index.php)
+- Uses: PHP + MySQL (database.sql)
+- Includes admin auth, student CRUD, attendance, marks, reports
+- Ready to run using XAMPP
 
 ## Live on GitHub Pages
 
-GitHub Pages can host only static files. This repository includes a static landing page at index.html for online viewing.
+GitHub Pages can host only static files. This repository uses index.html as the Phase 1 frontend demo for online preview.
 
-The full web application is PHP + MySQL based, so it must run on a local or remote PHP server (for example XAMPP).
+The full Phase 2 application is PHP + MySQL based, so it must run on a local or remote PHP server (for example XAMPP).
 
 ## Project Highlights
 
@@ -32,8 +53,8 @@ The full web application is PHP + MySQL based, so it must run on a local or remo
 
 ```text
 SSMS/
-├── index.html            # Static landing page for GitHub Pages
-├── index.php             # Redirect to login/dashboard (PHP app)
+├── index.html            # Phase 1 frontend demo (runs without server)
+├── index.php             # Phase 2 PHP entry (redirect to login/dashboard)
 ├── login.php
 ├── logout.php
 ├── dashboard.php
@@ -74,6 +95,14 @@ Foreign keys are used in attendance and marks tables to keep student and subject
 5. Import database.sql.
 6. Open the app in browser:
 	- http://localhost/SSMS/login.php
+
+### Run Phase 1 Without Server
+
+If you only want the frontend demo:
+
+1. Open index.html directly in your browser.
+2. Login with admin / admin123.
+3. Demo data is stored in localStorage.
 
 ### Default Admin Credentials
 
@@ -130,6 +159,24 @@ To run the complete system online, use a PHP-enabled host (for example, cPanel h
 - Generate student profile report
 - Show attendance summary and marks summary
 - Print-ready format
+
+## File Explanation (Viva Friendly)
+
+- index.html: Phase 1 complete frontend app UI and page sections.
+- style.css: Shared styles for both Phase 1 demo and Phase 2 PHP pages.
+- script.js: Phase 1 app logic and Phase 2 helper JS (validation + delete confirmation).
+- db_connect.php: Database connection, session start, and helper auth functions.
+- login.php: Admin login page and credential verification.
+- dashboard.php: Main admin dashboard with summary counts.
+- add_student.php: Student registration form and insert logic.
+- view_students.php: Student listing and search.
+- edit_student.php: Update student details.
+- delete_student.php: Delete selected student record.
+- subjects.php: Add and display subjects.
+- attendance.php: Save and view attendance records.
+- add_marks.php: Save marks and auto-calculate grade.
+- report.php: Student report view with attendance and marks summary.
+- database.sql: Full schema + sample data + default admin.
 
 ## Security and Validation
 

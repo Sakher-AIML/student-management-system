@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // If this script is loaded on non-demo pages, exit safely.
     var demoRoot = document.getElementById('ssms-demo-root');
     if (!demoRoot) {
+        runPhpPageHelpers();
         return;
     }
 
@@ -439,5 +440,28 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    function runPhpPageHelpers() {
+        var forms = document.querySelectorAll('.needs-validation');
+        forms.forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    alert('Please fill all required fields correctly.');
+                }
+            });
+        });
+
+        var deleteButtons = document.querySelectorAll('.confirm-delete');
+        deleteButtons.forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                var ok = confirm('Are you sure you want to delete this record?');
+                if (!ok) {
+                    event.preventDefault();
+                }
+            });
+        });
     }
 });
