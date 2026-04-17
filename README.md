@@ -15,8 +15,21 @@ This structure lets you demonstrate the project even when PHP is not available, 
 
 - File entry: index.html
 - Uses: HTML + CSS + JavaScript + localStorage
-- Modules: login, dashboard, students, attendance, marks, report
+- Modules: login, dashboard, students, subjects, attendance, marks, report, tools
 - Demo login: admin / admin123
+
+### Phase 1 Owner Features (Expanded)
+
+- Add, edit, delete students with instant refresh
+- Search students by roll number, name, course, or semester
+- Add, edit, delete subjects
+- Attendance tracking by student + subject + date
+- Attendance toggle and delete actions
+- Marks tracking with auto grade preview
+- Marks update by unique student + subject + exam type
+- Student report generation with print and CSV export
+- Full backup export/import in JSON
+- Browser localStorage persistence
 
 ### Phase 2 - PHP + MySQL Backend (Completed)
 
@@ -103,6 +116,7 @@ If you only want the frontend demo:
 1. Open index.html directly in your browser.
 2. Login with admin / admin123.
 3. Demo data is stored in localStorage.
+4. Use the Tools tab to export backup JSON anytime.
 
 ### Default Admin Credentials
 
