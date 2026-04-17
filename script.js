@@ -158,6 +158,10 @@ document.addEventListener('DOMContentLoaded', function () {
         maxMarks.addEventListener('input', updateMarksGradePreview);
 
         generateReportBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
+
             var studentId = Number(reportStudent.value);
             if (!studentId) {
                 reportOutput.innerHTML = '<p>Please select a student first.</p>';
@@ -167,10 +171,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         printReportBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
             window.print();
         });
 
         exportReportCsvBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
+
             var studentId = Number(reportStudent.value);
             if (!studentId) {
                 notify('Select a student to export report.', 'error');
@@ -936,6 +947,10 @@ document.addEventListener('DOMContentLoaded', function () {
         adminOnlyNodes.forEach(function (node) {
             node.classList.toggle('demo-hidden', !canEdit);
         });
+
+        if (!canEdit) {
+            reportOutput.innerHTML = '<p>Only admin can generate student reports.</p>';
+        }
 
         if (activeRoleBadge) {
             var label = canEdit ? 'Admin' : 'Viewer';
