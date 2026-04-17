@@ -33,11 +33,15 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     var state = loadState();
+    var currentUserRole = 'viewer';
+    var currentUsername = 'viewer';
     var notifyTimer = null;
 
     var authView = document.getElementById('authView');
     var appView = document.getElementById('appView');
     var notificationBox = document.getElementById('demoNotification');
+    var activeRoleBadge = document.getElementById('activeRoleBadge');
+    var adminOnlyNodes = demoRoot.querySelectorAll('[data-admin-only]');
 
     var loginForm = document.getElementById('loginForm');
     var loginMessage = document.getElementById('loginMessage');
@@ -107,9 +111,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function initializeUI() {
         attendanceDate.value = getTodayDate();
         updateMarksGradePreview();
-        renderAll();
+        var authSession = loadAuthSession();
+        var isLoggedIn = !!authSession;
+        if (authSession) {
+            currentUserRole = authSession.role;
+            currentUsername = authSession.username;
+        }
 
-        var isLoggedIn = localStorage.getItem(AUTH_KEY) === 'true';
+        renderAll();
         toggleAppView(isLoggedIn);
         if (isLoggedIn) {
             showPage('dashboard');
@@ -171,11 +180,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         exportDataBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
             downloadTextFile('ssms-demo-backup.json', JSON.stringify(state, null, 2), 'application/json');
             notify('Backup exported successfully.', 'success');
         });
 
         importDataBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
             if (!importDataInput.files || importDataInput.files.length === 0) {
                 notify('Choose a JSON backup file first.', 'error');
                 return;
@@ -201,6 +216,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         resetDemoDataBtn.addEventListener('click', function () {
+            if (!requireAdminAction()) {
+                return;
+            }
             var shouldReset = confirm('Reset all demo data to default sample values?');
             if (!shouldReset) {
                 return;
@@ -220,28 +238,46 @@ document.addEventListener('DOMContentLoaded', function () {
         event.preventDefault();
         var username = document.getElementById('username').value.trim();
         var password = document.getElementById('password').value.trim();
+        var role = 'viewer';
 
         if (username === 'admin' && password === 'admin123') {
-            localStorage.setItem(AUTH_KEY, 'true');
-            loginMessage.textContent = '';
-            loginForm.reset();
-            toggleAppView(true);
-            showPage('dashboard');
-            notify('Welcome back, admin.', 'success');
+            role = 'admin';
+        }
+
+        if (!username || !password) {
+            loginMessage.textContent = 'Enter username and password.';
+            loginMessage.style.color = '#b91c1c';
             return;
         }
 
-        loginMessage.textContent = 'Invalid credentials. Try admin / admin123.';
-        loginMessage.style.color = '#b91c1c';
+        saveAuthSession({
+            loggedIn: true,
+            username: username,
+            role: role
+        });
+
+        currentUserRole = role;
+        currentUsername = username;
+        loginMessage.textContent = '';
+        loginForm.reset();
+        toggleAppView(true);
+        renderAll();
+        showPage('dashboard');
+        notify(role === 'admin' ? 'Welcome back, admin.' : 'Logged in as viewer (read-only).', 'success');
     }
 
     function onLogout() {
-        localStorage.setItem(AUTH_KEY, 'false');
+        clearAuthSession();
+        currentUserRole = 'viewer';
+        currentUsername = 'viewer';
         toggleAppView(false);
     }
 
     function onStudentSubmit(event) {
         event.preventDefault();
+        if (!requireAdminAction()) {
+            return;
+        }
 
         var editId = Number(studentEditId.value || 0);
         var rollNo = studentRollNo.value.trim();
@@ -291,6 +327,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function onSubjectSubmit(event) {
         event.preventDefault();
+        if (!requireAdminAction()) {
+            return;
+        }
 
         var editId = Number(subjectEditId.value || 0);
         var code = subjectCode.value.trim().toUpperCase();
@@ -345,6 +384,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'edit-student') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var student = getStudentById(id);
             if (!student) {
                 return;
@@ -362,6 +404,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'delete-student') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var shouldDelete = confirm('Delete this student and all related records?');
             if (!shouldDelete) {
                 return;
@@ -397,6 +442,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'edit-subject') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var subject = getSubjectById(id);
             if (!subject) {
                 return;
@@ -412,6 +460,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'delete-subject') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var shouldDelete = confirm('Delete this subject and all related attendance/marks records?');
             if (!shouldDelete) {
                 return;
@@ -435,6 +486,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function onAttendanceSubmit(event) {
         event.preventDefault();
+        if (!requireAdminAction()) {
+            return;
+        }
 
         var studentId = Number(attendanceStudent.value);
         var subjectId = Number(attendanceSubject.value);
@@ -485,6 +539,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'toggle-attendance') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var row = state.attendance.find(function (entry) {
                 return entry.id === id;
             });
@@ -501,6 +558,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (action === 'delete-attendance') {
+            if (!requireAdminAction()) {
+                return;
+            }
             var shouldDelete = confirm('Delete this attendance entry?');
             if (!shouldDelete) {
                 return;
@@ -518,6 +578,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function onMarksSubmit(event) {
         event.preventDefault();
+        if (!requireAdminAction()) {
+            return;
+        }
 
         var studentId = Number(marksStudent.value);
         var subjectId = Number(marksSubject.value);
@@ -567,6 +630,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function onMarksTableAction(event) {
         var target = event.target;
         if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        if (!requireAdminAction()) {
             return;
         }
 
@@ -660,6 +727,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isLoggedIn) {
             authView.classList.add('demo-hidden');
             appView.classList.remove('demo-hidden');
+            applyAccessControls();
         } else {
             appView.classList.add('demo-hidden');
             authView.classList.remove('demo-hidden');
@@ -667,6 +735,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showPage(pageName) {
+        if (pageName === 'tools' && !isAdmin()) {
+            notify('Tools are available for admin only.', 'error');
+            pageName = 'dashboard';
+        }
+
         navLinks.forEach(function (btn) {
             btn.classList.toggle('demo-active', btn.getAttribute('data-page') === pageName);
         });
@@ -736,14 +809,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return a.rollNo.localeCompare(b.rollNo);
             })
             .map(function (student) {
+                var actionsHtml = isAdmin()
+                    ? '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="edit-student" data-id="' + student.id + '">Edit</button>' +
+                      '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-student" data-id="' + student.id + '">Delete</button>'
+                    : '<span class="demo-readonly-text">View Only</span>';
+
                 return '<tr>' +
                     '<td>' + escapeHtml(student.rollNo) + '</td>' +
                     '<td>' + escapeHtml(student.name) + '</td>' +
                     '<td>' + escapeHtml(student.course) + '</td>' +
                     '<td>' + escapeHtml(student.semester) + '</td>' +
                     '<td class="demo-inline-actions">' +
-                        '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="edit-student" data-id="' + student.id + '">Edit</button>' +
-                        '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-student" data-id="' + student.id + '">Delete</button>' +
+                        actionsHtml +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -761,12 +838,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 return a.code.localeCompare(b.code);
             })
             .map(function (subject) {
+                var actionsHtml = isAdmin()
+                    ? '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="edit-subject" data-id="' + subject.id + '">Edit</button>' +
+                      '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-subject" data-id="' + subject.id + '">Delete</button>'
+                    : '<span class="demo-readonly-text">View Only</span>';
+
                 return '<tr>' +
                     '<td>' + escapeHtml(subject.code) + '</td>' +
                     '<td>' + escapeHtml(subject.name) + '</td>' +
                     '<td class="demo-inline-actions">' +
-                        '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="edit-subject" data-id="' + subject.id + '">Edit</button>' +
-                        '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-subject" data-id="' + subject.id + '">Delete</button>' +
+                        actionsHtml +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -787,6 +868,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 var student = getStudentById(entry.studentId);
                 var subject = getSubjectById(entry.subjectId);
                 var statusClass = entry.status === 'Present' ? 'demo-pill demo-pill-present' : 'demo-pill demo-pill-absent';
+                                var actionsHtml = isAdmin()
+                                        ? '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="toggle-attendance" data-id="' + entry.id + '">Toggle</button>' +
+                                            '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-attendance" data-id="' + entry.id + '">Delete</button>'
+                                        : '<span class="demo-readonly-text">View Only</span>';
 
                 return '<tr>' +
                     '<td>' + escapeHtml(entry.date) + '</td>' +
@@ -795,8 +880,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<td>' + escapeHtml(subject ? subject.name : '-') + '</td>' +
                     '<td><span class="' + statusClass + '">' + escapeHtml(entry.status) + '</span></td>' +
                     '<td class="demo-inline-actions">' +
-                        '<button type="button" class="demo-btn demo-btn-secondary demo-btn-mini" data-action="toggle-attendance" data-id="' + entry.id + '">Toggle</button>' +
-                        '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-attendance" data-id="' + entry.id + '">Delete</button>' +
+                        actionsHtml +
                     '</td>' +
                 '</tr>';
             }).join('');
@@ -817,6 +901,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 var student = getStudentById(entry.studentId);
                 var subject = getSubjectById(entry.subjectId);
                 var percent = (entry.marksObtained / entry.maxMarks) * 100;
+                var actionsHtml = isAdmin()
+                    ? '<button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-marks" data-id="' + entry.id + '">Delete</button>'
+                    : '<span class="demo-readonly-text">View Only</span>';
 
                 return '<tr>' +
                     '<td>' + escapeHtml(student ? student.rollNo : '-') + '</td>' +
@@ -825,9 +912,74 @@ document.addEventListener('DOMContentLoaded', function () {
                     '<td>' + escapeHtml(entry.examType) + '</td>' +
                     '<td>' + escapeHtml(String(entry.marksObtained)) + ' / ' + escapeHtml(String(entry.maxMarks)) + '</td>' +
                     '<td>' + calculateGrade(percent) + '</td>' +
-                    '<td><button type="button" class="demo-btn demo-btn-danger demo-btn-mini" data-action="delete-marks" data-id="' + entry.id + '">Delete</button></td>' +
+                    '<td>' + actionsHtml + '</td>' +
                 '</tr>';
             }).join('');
+    }
+
+    function isAdmin() {
+        return currentUserRole === 'admin';
+    }
+
+    function requireAdminAction() {
+        if (isAdmin()) {
+            return true;
+        }
+
+        notify('Only admin can modify data.', 'error');
+        return false;
+    }
+
+    function applyAccessControls() {
+        var canEdit = isAdmin();
+
+        adminOnlyNodes.forEach(function (node) {
+            node.classList.toggle('demo-hidden', !canEdit);
+        });
+
+        if (activeRoleBadge) {
+            var label = canEdit ? 'Admin' : 'Viewer';
+            activeRoleBadge.textContent = label + ' (' + currentUsername + ')';
+        }
+    }
+
+    function loadAuthSession() {
+        var raw = localStorage.getItem(AUTH_KEY);
+        if (!raw || raw === 'false') {
+            return null;
+        }
+
+        // Backward compatibility with older boolean auth value.
+        if (raw === 'true') {
+            return {
+                loggedIn: true,
+                username: 'admin',
+                role: 'admin'
+            };
+        }
+
+        try {
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.loggedIn === true) {
+                return {
+                    loggedIn: true,
+                    username: String(parsed.username || 'viewer'),
+                    role: parsed.role === 'admin' ? 'admin' : 'viewer'
+                };
+            }
+        } catch (error) {
+            return null;
+        }
+
+        return null;
+    }
+
+    function saveAuthSession(session) {
+        localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+    }
+
+    function clearAuthSession() {
+        localStorage.setItem(AUTH_KEY, 'false');
     }
 
     function renderStudentReport(studentId) {

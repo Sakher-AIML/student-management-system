@@ -28,7 +28,8 @@
                 </form>
 
                 <p id="loginMessage" class="demo-message"></p>
-                <p class="demo-hint">Demo credentials: <strong>admin</strong> / <strong>admin123</strong></p>
+                <p class="demo-hint">Admin credentials: <strong>admin</strong> / <strong>admin123</strong></p>
+                <p class="demo-hint">Any other username/password logs in as <strong>Viewer (read-only)</strong>.</p>
             </div>
         </section>
 
@@ -37,6 +38,7 @@
                 <div>
                     <h2>Smart Student Management System</h2>
                     <p class="demo-subtitle">Frontend Demo (localStorage based)</p>
+                    <p class="demo-role-badge">Logged in as: <strong id="activeRoleBadge">Viewer</strong></p>
                 </div>
                 <button id="logoutBtn" class="demo-btn demo-btn-secondary">Logout</button>
             </header>
@@ -48,7 +50,7 @@
                 <button class="demo-nav-link" data-page="attendance">Attendance</button>
                 <button class="demo-nav-link" data-page="marks">Marks</button>
                 <button class="demo-nav-link" data-page="report">Report</button>
-                <button class="demo-nav-link" data-page="tools">Tools</button>
+                <button class="demo-nav-link" data-page="tools" data-admin-only="true">Tools</button>
             </nav>
 
             <main class="demo-container">
@@ -83,13 +85,13 @@
                     <div class="demo-card">
                         <h4>Quick Note</h4>
                         <p>This demo stores all values in your browser using localStorage. You can refresh and still keep data.</p>
-                        <button id="resetDemoDataBtn" class="demo-btn demo-btn-danger">Reset Demo Data</button>
+                        <button id="resetDemoDataBtn" class="demo-btn demo-btn-danger" data-admin-only="true">Reset Demo Data</button>
                     </div>
                 </section>
 
                 <section class="demo-page demo-hidden" data-page-content="students">
                     <h3>Student Management</h3>
-                    <form id="studentForm" class="demo-card demo-form-grid">
+                    <form id="studentForm" class="demo-card demo-form-grid" data-admin-only="true">
                         <input id="studentEditId" type="hidden">
                         <div>
                             <label for="studentRollNo">Roll No</label>
@@ -136,7 +138,7 @@
 
                 <section class="demo-page demo-hidden" data-page-content="subjects">
                     <h3>Subject Management</h3>
-                    <form id="subjectForm" class="demo-card demo-form-grid">
+                    <form id="subjectForm" class="demo-card demo-form-grid" data-admin-only="true">
                         <input id="subjectEditId" type="hidden">
                         <div>
                             <label for="subjectCode">Subject Code</label>
@@ -168,7 +170,7 @@
 
                 <section class="demo-page demo-hidden" data-page-content="attendance">
                     <h3>Attendance Management</h3>
-                    <form id="attendanceForm" class="demo-card demo-form-grid">
+                    <form id="attendanceForm" class="demo-card demo-form-grid" data-admin-only="true">
                         <div>
                             <label for="attendanceStudent">Student</label>
                             <select id="attendanceStudent" required></select>
@@ -212,7 +214,7 @@
 
                 <section class="demo-page demo-hidden" data-page-content="marks">
                     <h3>Marks Management</h3>
-                    <form id="marksForm" class="demo-card demo-form-grid">
+                    <form id="marksForm" class="demo-card demo-form-grid" data-admin-only="true">
                         <div>
                             <label for="marksStudent">Student</label>
                             <select id="marksStudent" required></select>
@@ -281,7 +283,7 @@
                     </div>
                 </section>
 
-                <section class="demo-page demo-hidden" data-page-content="tools">
+                <section class="demo-page demo-hidden" data-page-content="tools" data-admin-only="true">
                     <h3>Tools and Backup</h3>
                     <div class="demo-card demo-tools-grid">
                         <div>

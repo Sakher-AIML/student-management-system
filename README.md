@@ -16,7 +16,9 @@ This structure lets you demonstrate the project even when PHP is not available, 
 - File entry: index.html
 - Uses: HTML + CSS + JavaScript + localStorage
 - Modules: login, dashboard, students, subjects, attendance, marks, report, tools
-- Demo login: admin / admin123
+- Demo login roles:
+	- Admin (full access): admin / admin123
+	- Viewer (read-only): any other username/password
 
 ### Phase 1 Owner Features (Expanded)
 

@@ -83,6 +83,12 @@ body {
     font-size: 14px;
 }
 
+.demo-role-badge {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #0b4f63;
+}
+
 .demo-topbar {
     display: flex;
     justify-content: space-between;
@@ -225,6 +231,12 @@ textarea:focus {
 .demo-search-row input {
     flex: 1;
     min-width: 240px;
+}
+
+.demo-readonly-text {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .demo-btn-primary {
